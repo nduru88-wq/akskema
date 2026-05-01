@@ -1,1 +1,197 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
+<title>Dagens skema</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#007BFF">
+
+<style>
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    background: #007BFF;
+    color: white;
+    text-align: center;
+}
+
+/* DIN LAYOUT */
+.page-layout {
+    height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 245px;
+    gap: 14px;
+    padding: 14px;
+}
+
+.main-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.clock {
+    background: rgba(255,255,255,0.2);
+    padding: 14px;
+    border-radius: 14px;
+    cursor: pointer;
+}
+
+#clockTime {
+    font-size: 2.4em;
+    font-weight: bold;
+}
+
+.add-alarm-btn {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+}
+
+.alarm-box {
+    flex: 1;
+    background: rgba(255,255,255,0.16);
+    border-radius: 14px;
+    padding: 10px;
+    overflow-y: auto;
+}
+
+table {
+    width: 100%;
+    height: 100%;
+    border-collapse: collapse;
+    background: rgba(255,255,255,0.08);
+}
+
+th, td {
+    border: 1px solid rgba(255,255,255,0.5);
+}
+
+.time-cell {
+    width: 120px;
+    font-weight: bold;
+    background: rgba(0,0,0,0.2);
+}
+
+.activity-box {
+    padding: 12px;
+    font-weight: bold;
+}
+
+/* FARVER */
+.type-puslespil { background:#d9c2ff;color:#000;}
+.type-matematik { background:#b9f6ca;color:#000;}
+.type-krea { background:#ffd59e;color:#000;}
+.type-praktisk { background:#b7dcff;color:#000;}
+.type-historie { background:#f3b3a6;color:#000;}
+.type-friday { background:#ffb6d9;color:#000;}
+.type-pause { background:#e0e0e0;color:#000;}
+.type-bus { background:#fff3a6;color:#000;}
+
+.note {
+    margin-top:10px;
+    background: rgba(255,255,255,0.2);
+    padding:10px;
+    border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="page-layout">
+
+<div class="main-content">
+    <table id="schedule"></table>
+
+    <div class="note">
+        Alle fællesfag er frivillige at deltage i.
+    </div>
+</div>
+
+<div class="side-panel">
+    <div id="clock" class="clock">
+        <div id="clockTime"></div>
+    </div>
+
+    <button class="add-alarm-btn">➕ Opret alarm</button>
+
+    <div id="alarmList" class="alarm-box"></div>
+</div>
+
+</div>
+
+<script>
+// SIMPEL VERSION AF DIN LOGIK
+const days=["Mandag","Tirsdag","Onsdag","Torsdag","Fredag"];
+
+const schedule=[
+{
+time:"09.00-10.00",
+Mandag:[{text:"Puslespil",type:"puslespil"}],
+Tirsdag:[{text:"Puslespil",type:"puslespil"}],
+Onsdag:[{text:"Puslespil",type:"puslespil"}],
+Torsdag:[{text:"Puslespil",type:"puslespil"}],
+Fredag:[{text:"Puslespil",type:"friday"}]
+},
+{
+time:"10.00-11.30",
+Mandag:[{text:"KREA",type:"krea"}],
+Tirsdag:[{text:"Matematik",type:"matematik"}],
+Onsdag:[{text:"Praktisk",type:"praktisk"}],
+Torsdag:[{text:"Historie",type:"historie"}],
+Fredag:[{text:"Friday Minds",type:"friday"}]
+}
+];
+
+function createTable(){
+let t=document.getElementById("schedule");
+let d=days[new Date().getDay()-1];
+
+let html=`<tr><th class="time-cell">Tid</th><th>${d}</th></tr>`;
+
+schedule.forEach(r=>{
+html+=`<tr>
+<td class="time-cell">${r.time}</td>
+<td>${r[d].map(a=>`<div class="activity-box type-${a.type}">${a.text}</div>`).join("")}</td>
+</tr>`;
+});
+
+t.innerHTML=html;
+}
+
+function updateClock(){
+let n=new Date();
+document.getElementById("clockTime").innerText=n.toTimeString().slice(0,5);
+}
+
+setInterval(updateClock,1000);
+
+createTable();
+updateClock();
+</script>
+
+<!-- SERVICE WORKER -->
+<script>
+if ("serviceWorker" in navigator) {
+navigator.serviceWorker.register("service-worker.js");
+}
+</script>
+
+</body>
+</html>
