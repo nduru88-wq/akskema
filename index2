@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dagens skema</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #007BFF;
+    color: white;
+    text-align: center;
+}
+
+.page-layout {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    gap: 20px;
+    align-items: start;
+    padding: 20px;
+}
+
+.main-content {
+    min-width: 0;
+}
+
+.side-panel {
+    width: 240px;
+}
+
+.clock {
+    background: rgba(255,255,255,0.2);
+    padding: 15px;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.clock.manual {
+    background: rgba(255,200,0,0.4);
+}
+
+#clockTime {
+    font-size: 2em;
+    font-weight: bold;
+}
+
+button {
+    margin: 5px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.add-alarm-btn {
+    width: 100%;
+    font-weight: bold;
+    margin: 0 0 10px 0;
+}
+
+.alarm-box {
+    background: rgba(255,255,255,0.16);
+    border-radius: 12px;
+    padding: 10px;
+}
+
+.alarm-box h3 {
+    margin: 4px 0 10px 0;
+    font-size: 1em;
+}
+
+.alarm-box p {
+    margin: 6px 0;
+    font-size: 0.9em;
+}
+
+.alarm-item {
+    background: rgba(255,255,255,0.22);
+    margin: 6px 0;
+    padding: 8px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+.alarm-item span {
+    text-align: left;
+}
+
+.alarm-item button {
+    margin: 0;
+    padding: 5px 8px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(255,255,255,0.08);
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+th, td {
+    border: 1px solid rgba(255,255,255,0.5);
+    padding: 10px;
+    vertical-align: top;
+}
+
+th {
+    background: rgba(0,0,0,0.18);
+}
+
+.title-cell {
+    font-size: 1.45em;
+    font-weight: bold;
+}
+
+.time-cell {
+    width: 140px;
+    font-weight: bold;
+    background: rgba(0,0,0,0.15);
+}
+
+.activity-cell {
+    padding: 0;
+}
+
+.activity-box {
+    padding: 14px 10px;
+    margin: 0;
+    border-radius: 0;
+    color: #111;
+    font-weight: bold;
+    line-height: 1.35;
+    min-height: 100%;
+    box-sizing: border-box;
+}
+
+.activity-box + .activity-box {
+    border-top: 1px solid rgba(0,0,0,0.18);
+}
+
+.activity-box small {
+    display: block;
+    font-weight: normal;
+    margin-top: 4px;
+    font-size: 0.92em;
+}
+
+.type-puslespil { background: #d9c2ff; }
+.type-matematik { background: #b9f6ca; }
+.type-krea { background: #ffd59e; }
+.type-praktisk { background: #b7dcff; }
+.type-historie { background: #f3b3a6; }
+.type-friday { background: #ffb6d9; }
+.type-pause { background: #e0e0e0; }
+.type-bus { background: #fff3a6; }
+.type-default { background: #ffffff; }
+
+.note {
+    margin: 20px auto 35px auto;
+    background: rgba(255,255,255,0.16);
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 0.96em;
+}
+
+.popup {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.popup-box {
+    background: white;
+    color: black;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    max-width: 90%;
+    min-width: 280px;
+}
+
+input, select {
+    padding: 8px;
+    margin: 5px;
+    width: 90%;
+    max-width: 260px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+    .page-layout {
+        display: flex;
+        flex-direction: column;
+        padding: 15px;
+    }
+
+    .side-panel {
+        order: -1;
+        width: 100%;
+        max-width: 340px;
+        margin: 0 auto;
+    }
+
+    table {
+        width: 100%;
+    }
+
+    .time-cell {
+        width: 110px;
+    }
+
+    .title-cell {
+        font-size: 1.15em;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="page-layout">
+
+    <div class="main-content">
+        <table id="schedule"></table>
+
+        <div class="note">
+            Alle fællesfag er frivillige at deltage i, og ønsker Anne Kathrine ikke at være med,
+            kan hun blive på kontoret og lave individuelle opgaver.
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div id="clock" class="clock" onclick="openManualPopup()">
+            <div id="clockTime"></div>
+            <div id="clockMode">Aktuel tid</div>
+        </div>
+
+        <button class="add-alarm-btn" onclick="openAlarmPopup()">➕ Opret alarm</button>
+
+        <div id="alarmList" class="alarm-box"></div>
+    </div>
+
+</div>
+
+<div id="alarmPopup" class="popup">
+    <div class="popup-box">
+        <h2>⏰ Alarm!</h2>
+        <p id="alarmText"></p>
+        <button onclick="stopAlarm()">Stop alarm</button>
+    </div>
+</div>
+
+<div id="alarmSettingsPopup" class="popup">
+    <div class="popup-box">
+        <h3>Opret alarm</h3>
+
+        <input type="time" id="alarmTime">
+
+        <select id="alarmType">
+            <option value="dag">Daglig</option>
+            <option value="uge">Ugentlig</option>
+        </select>
+
+        <select id="alarmDay">
+            <option value="0">Mandag</option>
+            <option value="1">Tirsdag</option>
+            <option value="2">Onsdag</option>
+            <option value="3">Torsdag</option>
+            <option value="4">Fredag</option>
+            <option value="5">Lørdag</option>
+            <option value="6">Søndag</option>
+        </select>
+
+        <br><br>
+        <button onclick="saveAlarmFromPopup()">✅ OK</button>
+        <button onclick="closeAlarmPopup()">❌ Luk</button>
+
+        <p id="alarmError" style="color:red;"></p>
+    </div>
+</div>
+
+<div id="manualPopup" class="popup">
+    <div class="popup-box">
+        <h3>Indstil tid</h3>
+
+        <input type="date" id="manualDate">
+        <input type="time" id="manualTime">
+
+        <br>
+        <button onclick="setManualTime()">✅ OK</button>
+        <button onclick="setNow()">⏱ Nu</button>
+        <button onclick="closeManualPopup()">❌ Luk</button>
+
+        <p id="errorText" style="color:red;"></p>
+    </div>
+</div>
+
+<script>
+const days = ["Mandag","Tirsdag","Onsdag","Torsdag","Fredag"];
+
+let manual = false;
+let manualBase = null;
+let manualStart = null;
+
+let alarms = [];
+let audioCtx;
+let alarmInterval;
+
+const schedule = [
+    {
+        time: "09.00-10.00",
+        Mandag: [{ text: "Individuel opgave", note: "(Puslespil)", type: "puslespil" }],
+        Tirsdag: [{ text: "Individuel opgave", note: "(Puslespil)", type: "puslespil" }],
+        Onsdag: [{ text: "Individuel opgave", note: "(Puslespil)", type: "puslespil" }],
+        Torsdag: [{ text: "Puslespil", type: "puslespil" }],
+        Fredag: [
+            { text: "Switch / fælles puslespil", note: "9.30-10.00", type: "friday" },
+            { text: "Matematik", type: "matematik" }
+        ]
+    },
+    {
+        time: "10.00-11.30",
+        Mandag: [
+            { text: "KREA-værksted", note: "(Sanne og Bettina)", type: "krea" },
+            { text: "Eller Matematik", type: "matematik" }
+        ],
+        Tirsdag: [{ text: "Matematik", type: "matematik" }],
+        Onsdag: [
+            { text: "Praktisk værksted", note: "(Peter)", type: "praktisk" },
+            { text: "Eller Puslespil", type: "puslespil" }
+        ],
+        Torsdag: [{ text: "Historie & samfundsfag", note: "(Michael)", type: "historie" }],
+        Fredag: [
+            { text: "Friday Minds", note: "(brætspil, Switch & andet)", type: "friday" }
+        ]
+    },
+    {
+        time: "11.00-11.30",
+        Mandag: [{ text: "Fællespause", note: "(Overetage - Peter)", type: "pause" }],
+        Tirsdag: [{ text: "Fællespause", note: "(Underetage - Anja)", type: "pause" }],
+        Onsdag: [{ text: "Fællespause", note: "(Overetage - Bettina)", type: "pause" }],
+        Torsdag: [{ text: "Fællespause", note: "(Underetage - Michael)", type: "pause" }],
+        Fredag: []
+    },
+    {
+        time: "11.30-12.00",
+        Mandag: [{ text: "Frokostpause", type: "pause" }],
+        Tirsdag: [{ text: "Frokostpause", type: "pause" }],
+        Onsdag: [{ text: "Frokostpause", type: "pause" }],
+        Torsdag: [{ text: "Frokostpause", type: "pause" }],
+        Fredag: [{ text: "Frokost / gå til bussen kl. 11.50!", type: "bus" }]
+    },
+    {
+        time: "12.20",
+        Mandag: [{ text: "Gøre klar og gå til bussen!", type: "bus" }],
+        Tirsdag: [{ text: "Gøre klar og gå til bussen!", type: "bus" }],
+        Onsdag: [{ text: "Gøre klar og gå til bussen!", type: "bus" }],
+        Torsdag: [{ text: "Gøre klar og gå til bussen!", type: "bus" }],
+        Fredag: []
+    }
+];
+
+function startAlarmSound() {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    alarmInterval = setInterval(() => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+    }, 600);
+}
+
+function saveAlarms() {
+    localStorage.setItem("alarms", JSON.stringify(alarms));
+}
+
+function loadAlarms() {
+    const data = localStorage.getItem("alarms");
+    if (data) {
+        alarms = JSON.parse(data);
+    }
+}
+
+function formatTime(d) {
+    return d.toTimeString().slice(0,5);
+}
+
+function formatDate(d) {
+    return d.toISOString().split("T")[0];
+}
+
+function formatDateTitle(d) {
+    const weekday = d.toLocaleDateString("da-DK", { weekday: "long" });
+    const day = d.getDate();
+    const month = d.toLocaleDateString("da-DK", { month: "long" });
+    const year = d.getFullYear();
+
+    return capitalizeFirstLetter(`${weekday} d. ${day}. ${month} ${year}`);
+}
+
+function capitalizeFirstLetter(text) {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function escapeHtml(text) {
+    if (!text) return "";
+    return text
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function renderActivityBoxes(items) {
+    if (!items || items.length === 0) return "";
+
+    return items.map(item => {
+        const cls = "type-" + (item.type || "default");
+        const text = escapeHtml(item.text || "");
+        const note = item.note ? `<small>${escapeHtml(item.note)}</small>` : "";
+        return `<div class="activity-box ${cls}">${text}${note}</div>`;
+    }).join("");
+}
+
+function createTable() {
+    const t = document.getElementById("schedule");
+    const now = getNow();
+    const dayIndex = getWeekdayIndex(now);
+    const dayName = dayIndex >= 0 && dayIndex < 5 ? days[dayIndex] : null;
+    const title = formatDateTitle(now);
+
+    if (!dayName) {
+        t.innerHTML = `
+            <tr>
+                <th class="title-cell" colspan="2">${title}</th>
+            </tr>
+            <tr>
+                <td colspan="2">Der er ikke noget hverdags-skema i dag.</td>
+            </tr>
+        `;
+        return;
+    }
+
+    let html = `
+        <tr>
+            <th class="time-cell">Tid</th>
+            <th class="title-cell">${title}</th>
+        </tr>
+    `;
+
+    schedule.forEach(row => {
+        if (!row[dayName] || row[dayName].length === 0) {
+            return;
+        }
+
+        html += `
+            <tr>
+                <td class="time-cell">${row.time}</td>
+                <td class="activity-cell">${renderActivityBoxes(row[dayName])}</td>
+            </tr>
+        `;
+    });
+
+    t.innerHTML = html;
+}
+
+function getWeekdayIndex(date) {
+    let d = date.getDay();
+    if (d === 0 || d === 6) return -1;
+    return d - 1;
+}
+
+function getNow() {
+    if (!manual) return new Date();
+    const diff = new Date() - manualStart;
+    return new Date(manualBase.getTime() + diff);
+}
+
+function updateClock() {
+    const now = getNow();
+
+    document.getElementById("clockTime").innerText = formatTime(now);
+    document.getElementById("clockMode").innerText = manual ? "Manuel tid" : "Aktuel tid";
+    document.getElementById("clock").classList.toggle("manual", manual);
+
+    checkAlarms();
+}
+
+function openAlarmPopup() {
+    const now = getNow();
+    document.getElementById("alarmTime").value = formatTime(now);
+    document.getElementById("alarmSettingsPopup").style.display = "flex";
+}
+
+function closeAlarmPopup() {
+    document.getElementById("alarmSettingsPopup").style.display = "none";
+    document.getElementById("alarmError").innerText = "";
+}
+
+function saveAlarmFromPopup() {
+    const time = document.getElementById("alarmTime").value;
+    const type = document.getElementById("alarmType").value;
+    const day = document.getElementById("alarmDay").value;
+
+    if (!time) {
+        document.getElementById("alarmError").innerText = "Vælg et tidspunkt.";
+        return;
+    }
+
+    alarms.push({
+        time,
+        type,
+        day,
+        lastTriggered: null
+    });
+
+    saveAlarms();
+    renderAlarms();
+    closeAlarmPopup();
+}
+
+function renderAlarms() {
+    const list = document.getElementById("alarmList");
+
+    if (alarms.length === 0) {
+        list.innerHTML = "<h3>Dine alarmer</h3><p>Ingen alarmer oprettet endnu.</p>";
+        return;
+    }
+
+    list.innerHTML = "<h3>Dine alarmer</h3>";
+
+    alarms.forEach((a, i) => {
+        let label = a.type === "dag"
+            ? `Daglig kl. ${a.time}`
+            : `Ugentlig ${days[Number(a.day)] || ""} kl. ${a.time}`;
+
+        list.innerHTML += `
+            <div class="alarm-item">
+                <span>${label}</span>
+                <button onclick="deleteAlarm(${i})">❌</button>
+            </div>
+        `;
+    });
+}
+
+function deleteAlarm(i) {
+    alarms.splice(i, 1);
+    saveAlarms();
+    renderAlarms();
+}
+
+function checkAlarms() {
+    const nowDate = getNow();
+    const nowTime = formatTime(nowDate);
+    const weekdayIndex = getWeekdayIndex(nowDate);
+    const todayKey = formatDate(nowDate);
+
+    alarms.forEach(a => {
+        let shouldTrigger = false;
+
+        if (a.type === "dag" && a.time === nowTime) {
+            shouldTrigger = true;
+        }
+
+        if (a.type === "uge" && a.time === nowTime && Number(a.day) === weekdayIndex) {
+            shouldTrigger = true;
+        }
+
+        const triggerKey = `${todayKey}_${nowTime}_${a.type}_${a.day}`;
+
+        if (shouldTrigger && a.lastTriggered !== triggerKey) {
+            a.lastTriggered = triggerKey;
+            saveAlarms();
+
+            document.getElementById("alarmText").innerText = `Alarm sat til ${a.time}`;
+            document.getElementById("alarmPopup").style.display = "flex";
+
+            startAlarmSound();
+        }
+    });
+}
+
+function stopAlarm() {
+    if (alarmInterval) clearInterval(alarmInterval);
+    if (audioCtx) audioCtx.close();
+
+    document.getElementById("alarmPopup").style.display = "none";
+}
+
+function openManualPopup() {
+    const now = getNow();
+    document.getElementById("manualDate").value = formatDate(now);
+    document.getElementById("manualTime").value = formatTime(now);
+    document.getElementById("manualPopup").style.display = "flex";
+}
+
+function closeManualPopup() {
+    document.getElementById("manualPopup").style.display = "none";
+    document.getElementById("errorText").innerText = "";
+}
+
+function setManualTime() {
+    const date = document.getElementById("manualDate").value;
+    const time = document.getElementById("manualTime").value;
+
+    if (!date || !time) {
+        document.getElementById("errorText").innerText = "Vælg både dato og tid.";
+        return;
+    }
+
+    manualBase = new Date(date + "T" + time);
+    manualStart = new Date();
+    manual = true;
+
+    closeManualPopup();
+    createTable();
+    updateClock();
+}
+
+function setNow() {
+    manual = false;
+    closeManualPopup();
+    createTable();
+    updateClock();
+}
+
+loadAlarms();
+createTable();
+renderAlarms();
+updateClock();
+
+setInterval(() => {
+    updateClock();
+
+    const now = getNow();
+    if (now.getSeconds() === 0) {
+        createTable();
+    }
+}, 1000);
+</script>
+
+</body>
+</html>
