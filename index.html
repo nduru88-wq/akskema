@@ -193,6 +193,16 @@ th {
     min-width: 280px;
 }
 
+.next-lesson-box {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 12px;
+    background: #fff3a6;
+    color: #111;
+    font-weight: bold;
+    line-height: 1.35;
+}
+
 input, select {
     padding: 8px;
     margin: 5px;
@@ -260,6 +270,13 @@ input, select {
     <div class="popup-box">
         <h2>⏰ Alarm!</h2>
         <p id="alarmText"></p>
+
+        <div class="next-lesson-box">
+            <div>Næste lektion:</div>
+            <div id="nextLessonText"></div>
+        </div>
+
+        <br>
         <button onclick="stopAlarm()">Stop alarm</button>
     </div>
 </div>
@@ -500,6 +517,50 @@ function getNow() {
     return new Date(manualBase.getTime() + diff);
 }
 
+function timeStringToMinutes(timeText) {
+    const cleanTime = timeText.split("-")[0].trim().replace(".", ":");
+    const parts = cleanTime.split(":");
+
+    const hours = Number(parts[0]);
+    const minutes = Number(parts[1] || 0);
+
+    return hours * 60 + minutes;
+}
+
+function getCurrentMinutes(date) {
+    return date.getHours() * 60 + date.getMinutes();
+}
+
+function getNextLessonText(date) {
+    const dayIndex = getWeekdayIndex(date);
+
+    if (dayIndex < 0 || dayIndex > 4) {
+        return "Der er ikke noget hverdags-skema i dag.";
+    }
+
+    const dayName = days[dayIndex];
+    const nowMinutes = getCurrentMinutes(date);
+
+    for (const row of schedule) {
+        const rowStart = timeStringToMinutes(row.time);
+        const lessons = row[dayName];
+
+        if (rowStart >= nowMinutes && lessons && lessons.length > 0) {
+            const lessonTexts = lessons.map(item => {
+                let text = item.text || "";
+                if (item.note) {
+                    text += " " + item.note;
+                }
+                return text;
+            }).join(" / ");
+
+            return `${row.time}: ${lessonTexts}`;
+        }
+    }
+
+    return "Der er ikke flere lektioner i dag.";
+}
+
 function updateClock() {
     const now = getNow();
 
@@ -597,6 +658,7 @@ function checkAlarms() {
             saveAlarms();
 
             document.getElementById("alarmText").innerText = `Alarm sat til ${a.time}`;
+            document.getElementById("nextLessonText").innerText = getNextLessonText(nowDate);
             document.getElementById("alarmPopup").style.display = "flex";
 
             startAlarmSound();
